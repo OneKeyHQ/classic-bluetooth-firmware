@@ -233,8 +233,8 @@ static void loop_forever(void)
 static void dfu_enter_button_init(void)
 {
     nrf_gpio_cfg_sense_input(NRF_BL_DFU_ENTER_METHOD_BUTTON_PIN,
-                             NRF_GPIO_PIN_PULLUP,
-                             GPIO_PIN_CNF_SENSE_Low);
+                             NRF_GPIO_PIN_PULLDOWN,
+                             NRF_GPIO_PIN_SENSE_HIGH);
 }
 
 
@@ -361,7 +361,7 @@ static bool dfu_enter_check(void)
     }
 
     if (NRF_BL_DFU_ENTER_METHOD_BUTTON &&
-       (nrf_gpio_pin_read(NRF_BL_DFU_ENTER_METHOD_BUTTON_PIN) == 0))
+       (nrf_gpio_pin_read(NRF_BL_DFU_ENTER_METHOD_BUTTON_PIN) == 1))
     {
         NRF_LOG_DEBUG("DFU mode requested via button.");
 			  button_dfu_flag = 1;
