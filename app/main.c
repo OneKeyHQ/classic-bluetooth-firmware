@@ -242,7 +242,8 @@
 #define RESPONESE_BAT_UART				0x03
 #define RESPONESE_VER_UART				0x04
 #define RESPONESE_BLE_PUBKEY            0x05
-#define RESPONESE_BLE_SIGN              0x06
+#define RESPONESE_BLE_PUBKEY_LOCK       0x06
+#define RESPONESE_BLE_SIGN              0x07
 #define DEF_RESP						0xFF
 
 #define BLE_CTL_ADDR					0x6f000
@@ -334,7 +335,7 @@ static uint8_t ble_status_flag = 0;
 static ringbuffer_t m_ble_fifo;
 #endif
 
-#define STORAGE_TRUE_FLAG 0x5A5AA5A5
+#define STORAGE_TRUE_FLAG 0xa55aa55a
 
 NRF_FSTORAGE_DEF(nrf_fstorage_t fstorage) =
 {
@@ -1929,6 +1930,7 @@ void uart_event_handle(app_uart_evt_t * p_event)
                     index=0;
                     return;
                 }
+                lenth -= 1;
                 switch(uart_data_array[4])
                 {
                     case UART_CMD_CTL_BLE:
@@ -1972,6 +1974,14 @@ void uart_event_handle(app_uart_evt_t * p_event)
 						break;
                     case UART_CMD_BLE_PUBKEY:
 						trans_info_flag = RESPONESE_BLE_PUBKEY;
+                        if(lenth == 2){
+                            if(uart_data_array[5] == 0){
+                                trans_info_flag = RESPONESE_BLE_PUBKEY;
+                            }else if(uart_data_array[5] == 1)
+                            {
+                                trans_info_flag = RESPONESE_BLE_PUBKEY_LOCK;
+                            }
+                        }
 						break;
                     case UART_CMD_BLE_SIGN:
 						trans_info_flag = RESPONESE_BLE_SIGN;
@@ -2473,6 +2483,16 @@ static void rsp_st_uart_cmd(void *p_event_data,uint16_t event_size)
             bak_buff[2] = 0x02;
         }else
         {
+            bak_buff[1] = 0x40;
+            memcpy(&bak_buff[2],key_info.public_key,sizeof(key_info.public_key));
+        }        
+        send_stm_data(bak_buff,bak_buff[1]);
+		trans_info_flag = DEF_RESP;
+	}else if(trans_info_flag == RESPONESE_BLE_PUBKEY_LOCK){
+        ecdsa_key_info_t key_info={0};
+        nrf_fstorage_read(&fstorage, DEVICE_KEY_INFO_ADDR, &key_info, sizeof(ecdsa_key_info_t));
+        if(key_info.key_lock_flag != STORAGE_TRUE_FLAG)
+        {
             ret_code_t rc;
             key_info.key_lock_flag = STORAGE_TRUE_FLAG;
             rc =  nrf_fstorage_erase(&fstorage,DEVICE_KEY_INFO_ADDR, FDS_PHY_PAGES_IN_VPAGE, NULL);
@@ -2481,13 +2501,15 @@ static void rsp_st_uart_cmd(void *p_event_data,uint16_t event_size)
             rc = nrf_fstorage_write(&fstorage, DEVICE_KEY_INFO_ADDR, &key_info, sizeof(ecdsa_key_info_t), NULL);
             APP_ERROR_CHECK(rc);
 
-            wait_for_flash_ready(&fstorage);
-            bak_buff[1] = 0x40;
-            memcpy(&bak_buff[2],key_info.public_key,sizeof(key_info.public_key));
-        }        
+            wait_for_flash_ready(&fstorage);          
+        }
+        bak_buff[0] = UART_CMD_BLE_PUBKEY;
+        bak_buff[1] = 0x01;
+        bak_buff[2] = 0x00;
         send_stm_data(bak_buff,bak_buff[1]);
 		trans_info_flag = DEF_RESP;
-	}else if(trans_info_flag == RESPONESE_BLE_SIGN)
+    }
+    else if(trans_info_flag == RESPONESE_BLE_SIGN)
 	{   
         uint32_t msg_len = uart_data_array[2]<<8|uart_data_array[3] -2;
         bak_buff[0] = UART_CMD_BLE_SIGN;        
