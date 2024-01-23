@@ -128,6 +128,7 @@
 #define BLE_DISCON                      3
 #define BLE_ON_TEMPO                    5                         
 #define BLE_OFF_TEMPO                   6     
+#define BLE_STATUS                      7
 
 #define NO_CHARGE                       0
 #define USB_CHARGE                      1
@@ -244,6 +245,7 @@
 #define RESPONESE_BLE_PUBKEY            0x05
 #define RESPONESE_BLE_PUBKEY_LOCK       0x06
 #define RESPONESE_BLE_SIGN              0x07
+#define RESPONESE_BLE_STATUS            0x08
 #define DEF_RESP						0xFF
 
 #define BLE_CTL_ADDR					0x6f000
@@ -1954,7 +1956,11 @@ void uart_event_handle(app_uart_evt_t * p_event)
                         {
                             ble_conn_flag = BLE_OFF_TEMPO;
                             NRF_LOG_INFO("RCV ble flag stop adv flag.");
-                        }else{
+                        }else if(BLE_STATUS == uart_data_array[6])
+                        {
+                            trans_info_flag = RESPONESE_BLE_STATUS;;
+                        }
+                        else{
                             
                             NRF_LOG_INFO("Receive flag is %d \n",uart_data_array[6]);
                         }
@@ -2508,9 +2514,7 @@ static void rsp_st_uart_cmd(void *p_event_data,uint16_t event_size)
         bak_buff[2] = 0x00;
         send_stm_data(bak_buff,bak_buff[1]);
 		trans_info_flag = DEF_RESP;
-    }
-    else if(trans_info_flag == RESPONESE_BLE_SIGN)
-	{   
+    }else if(trans_info_flag == RESPONESE_BLE_SIGN){   
         uint32_t msg_len = uart_data_array[2]<<8|uart_data_array[3] -2;
         bak_buff[0] = UART_CMD_BLE_SIGN;        
 
@@ -2527,7 +2531,14 @@ static void rsp_st_uart_cmd(void *p_event_data,uint16_t event_size)
         }        
         send_stm_data(bak_buff,bak_buff[1]);
 		trans_info_flag = DEF_RESP;
-	}	
+	}else if(trans_info_flag == RESPONESE_BLE_STATUS){
+        bak_buff[0] = UART_CMD_CTL_BLE;
+        bak_buff[1] = 0x01;
+        bak_buff[2] = ((ble_status_flag-1)^1);
+		send_stm_data(bak_buff,bak_buff[1]);
+        trans_info_flag = DEF_RESP;
+    }
+
 }
 static void manage_bat_level(void *p_event_data,uint16_t event_size)
 {
