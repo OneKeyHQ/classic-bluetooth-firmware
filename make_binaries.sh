@@ -28,3 +28,4 @@ mv dfu/_build/nrf52832_xxaa_s132.bin $PATH_OUTPUT_DIR/dfu.bin
 mv dfu/_build/nrf52832_xxaa_s132.hex $PATH_OUTPUT_DIR/dfu.hex
 mv app/_build/nrf52832_xxaa.bin $PATH_OUTPUT_DIR/app.bin
 mv app/_build/nrf52832_xxaa.hex $PATH_OUTPUT_DIR/app.hex
+utils/hash.py -t bluetooth -f artifacts/app.bin > artifacts/sha256.txt
