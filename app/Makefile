@@ -341,7 +341,8 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
 
-
+BUILD_COMMIT=$(shell git rev-parse HEAD | cut -c1-7)
+CFLAGS += -DBUILD_ID='"$(BUILD_COMMIT)"'
 
 # C++ flags common to all targets
 CXXFLAGS += $(OPT)
