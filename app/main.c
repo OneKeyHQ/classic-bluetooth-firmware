@@ -280,7 +280,7 @@ volatile uint8_t ble_adv_switch_flag = BLE_DEF;
 static volatile uint8_t ble_conn_flag = BLE_DEF;
 static volatile uint8_t trans_info_flag = UART_DEF;
 static volatile uint8_t ble_reset_flag=0;
-static uint8_t mac_ascii[12];
+static uint8_t mac_ascii[24];
 static uint8_t mac[6]={0x42,0x13,0xc7,0x98,0x95,0x1a}; //Device MAC address
 static char ble_adv_name[ADV_NAME_LENGTH];
 
